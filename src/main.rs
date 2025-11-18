@@ -1,3 +1,4 @@
+use std::cmp::max;
 use std::collections::{BTreeMap, HashMap};
 use std::iter::zip;
 
@@ -26,7 +27,7 @@ struct Task {
     late_start: usize,
     late_finish: usize,
     manual_start: usize,
-    resource_needs: Option<BTreeMap<Resource, isize>>,
+    resource_needs: Option<BTreeMap<Resource, Vec<isize>>>,
     config_needs: Option<Vec<Configuration>>,
     config_latch: Option<Vec<Configuration>>,
     config_unlatch: Option<TaskId>,
@@ -47,23 +48,49 @@ impl Resource_Calendar {
         self.calendar.len() - 1
     }
 
-    fn find_first_resource_calendar_compatibility (&self, resource_needs: BTreeMap<Resource, isize>) -> Option<usize> {
-        
+    fn find_first_resource_calendar_compatibility (&self, resource_needs: BTreeMap<Resource, Vec<isize>>) -> Option<usize> {
+        let mut first_compatible_intervals: BTreeMap<Resource, usize> = BTreeMap::new();
+        let mut min_interval = 0;
 
-        None
-    }
-
-    fn find_first_compatible_resource_window (resource_calendar: &Vec<isize>, resource_need: Vec<isize>) -> Option<usize> {
-        'outer: for i in 0..resource_calendar.len() - resource_need.len() {
-             for j in 0..resource_need.len() {
-                 if resource_calendar[i + j] < resource_need[j] {
-                     continue 'outer;
-                 }
-             }
-            return Some(i);
+        loop {
+            for (resource, needs) in resource_needs.iter() {
+                first_compatible_intervals.insert(resource.clone(), find_first_compatible_resource_window(&self.calendar[*resource], needs, min_interval)?);
             }
+
+            let mut first_result = true;
+            let mut all_results_same = true;
+
+            for (_, &result) in first_compatible_intervals.iter() {
+                if first_result {
+                    first_result = false;
+                    min_interval = result;
+                } else if min_interval != result {
+                    all_results_same = false;
+                    min_interval = max(min_interval, result);
+                }
+            }
+
+            if all_results_same {
+                return Some(min_interval);
+            }
+        }
+
         None
     }
+}
+
+fn find_first_compatible_resource_window (resource_calendar: &Vec<isize>, resource_need: &Vec<isize>, starting_interval: usize) -> Option<usize> {
+    'outer: for i in 0..resource_calendar.len() - resource_need.len() {
+        for j in 0..resource_need.len() {
+            if resource_calendar[i + j] < resource_need[j] {
+                continue 'outer;
+            }
+        }
+
+        return Some(i);
+    }
+
+    None
 }
 
 struct Configuration_Calendar {
