@@ -47,24 +47,22 @@ impl Resource_Calendar {
         self.calendar.len() - 1
     }
 
-    pub fn find_first_compatible_resource_window (&self, resource: usize, resource_need: Vec<isize>) -> Result<usize, String> {
-        Err("Not implemented".to_owned())
+    fn find_first_resource_calendar_compatibility (&self, resource_needs: BTreeMap<Resource, isize>) -> Option<usize> {
+        
+
+        None
     }
 
-    // Checks the provided resource calendar slice against resource needs. Returns the first
-    // interval where there are enough resources available until the end of the resource calendar
-    // slice. If there are enough resources available, this will be the first element (0). If there
-    // aren't enough resources available at any point, this will one more than the last element.
-    fn check_window_resource_availability(resource_cal_slice: Vec<isize>, resource_need: Vec<isize>) -> usize {
-        let result: Vec<isize> = zip(resource_cal_slice, resource_need).map(|(a, b)| a - b).collect();
-
-        for i in (0..result.len()).rev() {
-            if result[i] < 0 {
-                return i;
+    fn find_first_compatible_resource_window (resource_calendar: &Vec<isize>, resource_need: Vec<isize>) -> Option<usize> {
+        'outer: for i in 0..resource_calendar.len() - resource_need.len() {
+             for j in 0..resource_need.len() {
+                 if resource_calendar[i + j] < resource_need[j] {
+                     continue 'outer;
+                 }
+             }
+            return Some(i);
             }
-        }
-
-        0
+        None
     }
 }
 
