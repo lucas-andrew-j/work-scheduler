@@ -32,12 +32,16 @@ fn main() {
         resource_needs: None,
     });
 
+    let mut ties: HashMap<TaskId, Vec<TaskId>> = HashMap::new();
+    ties.insert(1, vec![2]);
+    ties.insert(2, vec![1]);
+
     let schedule = Schedule::new(
         tasks,
-        HashMap::new(),
+        ties,
         1);
 
-    schedule.contains_cycle();
+    println!("{}", schedule.contains_cycle());
 }
 
 #[derive(Debug)]
@@ -72,23 +76,47 @@ impl Schedule {
         }
     }
 
-    fn contains_cycle(&self) -> bool {
-        let mut tasks_without_preds: Vec<TaskId> = Vec::new();
+    pub fn contains_cycle(&self) -> bool {
+        let mut visited: BTreeSet<TaskId> = BTreeSet::new();
 
-        for task in self.tasks.iter() {
-            if !self.ties.contains_key(&task.1.task_id) {
-                tasks_without_preds.push(task.1.task_id);
-            }
-        }
+        // for task in self.tasks.iter() {
+        //     if !self.ties.contains_key(&task.1.task_id) {
+        //         tasks_without_preds.push(task.1.task_id);
+        //     }
+        // }
 
         let mut path: BTreeSet<TaskId> = BTreeSet::new();
 
-        for task_id in tasks_without_preds {
-            //check for a cycle from here
+        for task in self.tasks.iter() {
+            if !visited.contains(&task.1.task_id) {
+                if depth_first_cycle_check(task.1.task_id, &self.ties, &mut visited, &mut path) {
+                    return true;
+                }
+            }
         }
 
         false
     }
+}
+
+fn depth_first_cycle_check(task_id: TaskId, ties: &HashMap<TaskId, Vec<TaskId>>, visited: &mut BTreeSet<TaskId>, path: &mut BTreeSet<TaskId>) -> bool {
+    if path.contains(&task_id) {
+        return true;
+    } else {
+        path.insert(task_id);
+    }
+
+    if let Some(tied_tasks) = ties.get(&task_id) {
+        for task in tied_tasks {
+            if depth_first_cycle_check(*task, ties, visited, path) {
+                return true;
+            }
+        }
+    } else {
+        return false;
+    }
+
+    false
 }
 
 // impl Task {
